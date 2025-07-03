@@ -23,49 +23,52 @@ import java.io.*;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
+    private final Router router;
+    private final OutputStream rawOut;
 
-    public ClientHandler(Socket socket) {
-        this.clientSocket = socket;
+
+    public ClientHandler(Socket clientSocket, Router router) throws IOException{
+        this.clientSocket = clientSocket;
+        this.router = router;
+        this.rawOut = clientSocket.getOutputStream();
     }
 
     @Override
     public void run() {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-             OutputStream rawOut = clientSocket.getOutputStream())
-        {
-
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()))){
             String requestLine = in.readLine();
             if (requestLine == null || requestLine.isEmpty()) {
                 return;
             }
 
+
+
             System.out.println("Client Request: " + requestLine);
 
             // Extract path
             String[] tokens = requestLine.split(" ");
-            if (tokens.length < 3) return;
+
             String method = tokens[0];
-            String resource = URLDecoder.decode(tokens[1], StandardCharsets.UTF_8);
+            String path = tokens[1];
 
-            if(!method.equals("GET")){
-                sendResponse(out);
+
+            if(method.equals("GET")){
+                router.handle(path, this);
+            }else if(method.equals("HEAD")){
+
+            }else if (method.equals("OPTIONS")){
+                sendOptionsResponse();
+            }else{
+                sendMethodNotAllowed();
             }
 
-            if (resource.startsWith("/fetch?url=")) {
-                handleFetchRequest(resource, out);
-            } else {
-               serveStaticFile(resource, rawOut);
-            }
 
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
                 clientSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            } catch (IOException ignored) {}
         }
     }
 
@@ -96,7 +99,7 @@ public class ClientHandler implements Runnable {
         out.println("<p>Description: " + desc + "</p>");
         out.println("</body></html>");
     }
-    private void serveStaticFile(String resource, OutputStream rawOut) throws IOException {
+    public void serveStaticFile(String resource, OutputStream rawOut) throws IOException {
         if (resource.equals("/")){
             resource = "/index.html";
         }
@@ -125,7 +128,7 @@ public class ClientHandler implements Runnable {
             out.flush();
         }
     }
-    private void sendResponse(PrintWriter out){
+    public void sendResponse(PrintWriter out){
         out.println("HTTP/1.1 " + "501 not implemented");
         out.println("Content-Type: " + "text/plain");
         out.println("Content-Length: " + "Method not supported.".length());
@@ -133,5 +136,33 @@ public class ClientHandler implements Runnable {
         out.println("Method not supported.");
     }
 
+    public OutputStream getOutputStream() {
+        return rawOut;
+    }
+
+    public void sendNotFound() throws IOException {
+        PrintWriter out = new PrintWriter(rawOut, true);
+        out.println("HTTP/1.1 404 NOT FOUND");
+        out.println("Content-Type: " + "text/html");
+        out.println();
+        out.println("<html><body><h1>404 NOT FOUND</h1></body></html>");
+        out.flush();
+    }
+
+    public void sendOptionsResponse() throws IOException {
+        PrintWriter out = new PrintWriter(rawOut, true);
+        out.println("HTTP/1.1 204 No Content");
+        out.println("Allow: GET, HEAD, OPTIONS");
+        out.println();
+        out.flush();
+    }
+
+    public void sendMethodNotAllowed() throws IOException {
+        PrintWriter out = new PrintWriter(rawOut, true);
+        out.println("HTTP/1.1 405 Method Not Allowed");
+        out.println("Allow: GET, HEAD, OPTIONS");
+        out.println();
+        out.flush();
+    }
 }
 
