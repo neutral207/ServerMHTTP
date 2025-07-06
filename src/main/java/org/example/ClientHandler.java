@@ -41,25 +41,20 @@ public class ClientHandler implements Runnable {
                 return;
             }
 
-
-
-            System.out.println("Client Request: " + requestLine);
-
-            // Extract path
             String[] tokens = requestLine.split(" ");
 
             String method = tokens[0];
             String path = tokens[1];
 
+            System.out.println("Client Request: " + requestLine);
 
-            if(method.equals("GET")){
-                router.handle(path, this);
-            }else if(method.equals("HEAD")){
 
-            }else if (method.equals("OPTIONS")){
-                sendOptionsResponse();
-            }else{
-                sendMethodNotAllowed();
+            switch (method) {
+                case "GET" -> router.handle(path, this);
+                case "HEAD" -> { handleHead(path);
+                }
+                case "OPTIONS" -> sendOptionsResponse();
+                default -> sendMethodNotAllowed();
             }
 
 
@@ -72,6 +67,28 @@ public class ClientHandler implements Runnable {
         }
     }
 
+    private void handleHead(String resource) throws IOException {
+        if(resource.equals("/")){
+            resource = "/index.html";
+        }
+
+        Path filePath = Paths.get(System.getProperty("user.dir"),  "static", resource.substring(1)).normalize();
+
+        if(Files.exists(filePath) && !Files.isDirectory(filePath)){
+            String ext = getFileExtension(filePath.getFileName().toString());
+            String contentType = MimeTypeMap.get(ext);
+            long contentLength = Files.size(filePath);
+
+            PrintWriter out = new PrintWriter(rawOut, true);
+            out.println("HTTP/1.1 200 OK");
+            out.println("Content-Type: " + contentType);
+            out.println("Content-Length: " + contentLength);
+            out.println();
+            out.flush();
+        }else{
+            sendNotFound();
+        }
+    }
     private void handleFetchRequest(String resource, PrintWriter out) {
         String url = resource.substring("fetch?url=".length());
         String title;
@@ -135,7 +152,10 @@ public class ClientHandler implements Runnable {
         out.println();
         out.println("Method not supported.");
     }
-
+    private String getFileExtension(String fileName) {
+        int index = fileName.lastIndexOf('.');
+        return (index == -1) ? "" : fileName.substring(index + 1).toLowerCase();
+    }
     public OutputStream getOutputStream() {
         return rawOut;
     }
