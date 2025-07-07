@@ -9,8 +9,6 @@ import java.net.Socket;
 
 public class HttpServer {
 
-    private static final String WEB_ROOT = "static";
-
     public static void main(String[] args) {
         Properties props = new Properties();
         try(InputStream input = new FileInputStream("config.properties")){
@@ -18,7 +16,7 @@ public class HttpServer {
             System.out.println("Configuration file loaded.");
         }
         catch(IOException ex){
-            ex.printStackTrace();
+            System.err.println("Error loading configuration file.");
         }
 
         int port = Integer.parseInt(props.getProperty("port", "8080"));
@@ -41,7 +39,7 @@ public class HttpServer {
 
         } catch (IOException e) {
             System.err.println("Server exception: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("[" + java.time.LocalDateTime.now() + "] ⚠️ Error: " + e.getMessage());
         }
     }
 }

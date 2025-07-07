@@ -13,12 +13,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.net.URLDecoder;
 import java.io.*;
 
 public class ClientHandler implements Runnable {
@@ -51,19 +49,22 @@ public class ClientHandler implements Runnable {
 
             switch (method) {
                 case "GET" -> router.handle(path, this);
-                case "HEAD" -> { handleHead(path);
-                }
+                case "HEAD" -> handleHead(path);
                 case "OPTIONS" -> sendOptionsResponse();
                 default -> sendMethodNotAllowed();
             }
 
 
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error Handling client request: " + e.getMessage());
+            System.err.println("[" + java.time.LocalDateTime.now() + "] ⚠️ Error: " + e.getMessage());
         } finally {
             try {
                 clientSocket.close();
-            } catch (IOException ignored) {}
+            } catch (IOException ex) {
+                System.err.println("Error closing client socket: " + ex.getMessage());
+                System.err.println("[" + java.time.LocalDateTime.now() + "] ⚠️ Error: " + ex.getMessage());
+            }
         }
     }
 
@@ -116,42 +117,7 @@ public class ClientHandler implements Runnable {
         out.println("<p>Description: " + desc + "</p>");
         out.println("</body></html>");
     }
-    public void serveStaticFile(String resource, OutputStream rawOut) throws IOException {
-        if (resource.equals("/")){
-            resource = "/index.html";
-        }
-        String webRoot = "static";
-        Path staticDir = Paths.get(System.getProperty("user.dir"), webRoot);
-        Path filePath = staticDir.resolve(resource.substring(1)).normalize();
-        if (Files.exists(filePath) && !Files.isDirectory(filePath)) {
-            String contentType = Files.probeContentType(filePath);
-            byte[] fileData = Files.readAllBytes(filePath);
 
-            PrintWriter out = new PrintWriter(rawOut, true);
-            out.println("HTTP/1.1 200 OK");
-            out.println("Content-Type: " + contentType);
-            out.println("Content-Length: " + fileData.length);
-            out.println();
-            out.flush();
-
-            rawOut.write(fileData);
-            rawOut.flush();
-        } else{
-            PrintWriter out = new PrintWriter(rawOut, true);
-            out.println("HTTP/1.1 404 NOT FOUND");
-            out.println("Content-Type: text/html");
-            out.println("<html><body><h1>404 NOT FOUND</h1></body></html>");
-            out.println();
-            out.flush();
-        }
-    }
-    public void sendResponse(PrintWriter out){
-        out.println("HTTP/1.1 " + "501 not implemented");
-        out.println("Content-Type: " + "text/plain");
-        out.println("Content-Length: " + "Method not supported.".length());
-        out.println();
-        out.println("Method not supported.");
-    }
     private String getFileExtension(String fileName) {
         int index = fileName.lastIndexOf('.');
         return (index == -1) ? "" : fileName.substring(index + 1).toLowerCase();
@@ -160,7 +126,7 @@ public class ClientHandler implements Runnable {
         return rawOut;
     }
 
-    public void sendNotFound() throws IOException {
+    public void sendNotFound() {
         PrintWriter out = new PrintWriter(rawOut, true);
         out.println("HTTP/1.1 404 NOT FOUND");
         out.println("Content-Type: " + "text/html");
