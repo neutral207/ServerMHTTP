@@ -8,12 +8,12 @@ public class Router {
     public Router(StaticFileHandler staticFileHandler) {
         this.staticFileHandler = staticFileHandler;
     }
-    public  boolean handle(String path, ClientHandler handler) throws IOException {
-        if(path.startsWith("/api")) {
-            handler.sendNotFound();
-            return true;
+    public void handle(String path, ClientHandler handler) throws IOException {
+        if(path.startsWith("/api/fetch")) {
+            ApiHandler apiHandler = new ApiHandler();
+            apiHandler.handle(path, handler);
         }else{
-            return staticFileHandler.serve(path, handler.getOutputStream());
+            staticFileHandler.serve(path, handler.getOutputStream());
         }
     }
 }
