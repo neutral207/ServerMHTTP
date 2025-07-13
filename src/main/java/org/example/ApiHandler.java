@@ -55,12 +55,46 @@ public class ApiHandler {
 
 
 
-    private String extractQueryParam(String path, String name){
-            return "";    }
+    private String extractQueryParam(String path, String key){
+        try{
+            int index =   path.indexOf("?");
+            if(index == -1)return null;
 
-    private void sendJSON(OutputStream out, String title, String desc) {}
+            String query = path.substring(index+1);
+            String[] params = query.split("&");
+            for(String param : params){
+                String[] kv = param.split("=");
+                if(kv.length == 2 && kv[0].equals(key)){
+                    return URLDecoder.decode(kv[1], StandardCharsets.UTF_8);
+                }
+            }
+        } catch (Exception e){
+            return null;
+        }
+            return null;    }
 
-    private void sendError(OutputStream out, String message)  {}
+    private void sendJSON(OutputStream out, String title, String desc) {
+        PrintWriter writer = new PrintWriter(out);
+        writer.println("HTTP/1.1 200 OK");
+        writer.println("Content-Type: application/json");
+        writer.println();
+        writer.println("{\"title\":\"" + escapeJSON(title) + "\",\"description\":\"" + escapeJSON(desc) + "\"}");
+        writer.flush();
+    }
 
+    private void sendError(OutputStream out, String message)  {
+        PrintWriter pw = new PrintWriter(out, true);
+        pw.println("HTTP1.1 400 Bad Request");
+        pw.println("Content-Type: application/json");
+        pw.println();
+        pw.println("{");
+        pw.println("  \"error\": \"" + escapeJSON(message) + "\"");
+        pw.println("}");
+        pw.flush();
+    }
+
+    private String escapeJSON(String str){
+        return str.replace("\"", "\\\"");
+    }
 
 }
