@@ -15,5 +15,10 @@ public class Router {
         }else{
             staticFileHandler.serve(path, handler.getOutputStream());
         }
+        StaticFileHandler staticFormHandler = new StaticFileHandler("src/main/resources");
+        if(path.equals("/") || path.equals("/index.html")){
+
+            staticFormHandler.serve("/form.html", handler.getOutputStream());
+        }
     }
 }

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Fetch Metadata</title>
+</head>
+<body>
+    <h1> Website Metadata</h1>
+    <form action="api/fetch" method="get">
+      <label for="url">Enter URL:</label>
+      <input type="text" id="url" name="url" placeholder="https://example.com" required>
+      <br>
+      <label for="format">Format:</label>
+      <select id="format" name="format">
+          <option value="html">HTML Preview</option>
+          <option value="json">JSON (Raw)</option>
+      </select>
+      <br><br>
+      <button type="submit">Fetch</button>
+    </form>
+</body>
+</html>

@@ -8,7 +8,9 @@ public class StaticFileHandler {
     public StaticFileHandler(String root) {
         this.staticDir = Paths.get(System.getProperty("user.dir"), root);
     }
-
+    public StaticFileHandler() {
+        this.staticDir = Path.of("src/main/resources");
+    }
     public boolean serve(String resource, OutputStream rawOut) {
         if(resource.equals("/")){
             resource = "/index.html";
