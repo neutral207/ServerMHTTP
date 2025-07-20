@@ -11,7 +11,7 @@ public class HttpServer {
 
     public static void main(String[] args) {
         Properties props = new Properties();
-        try(InputStream input = new FileInputStream("config.properties")){
+        try(InputStream input = new FileInputStream("C:/Users/jteam/IdeaProjects/ServerMHTTP/out/artifacts/ServerPreviewMHTTP_jar/config.properties")){
             props.load(input);
             System.out.println("Configuration file loaded.");
         }
@@ -22,15 +22,13 @@ public class HttpServer {
         int port = Integer.parseInt(props.getProperty("port", "8080"));
         String staticDir = props.getProperty("staticDir", "static");
 
+        StaticFileHandler staticFileHandler = new StaticFileHandler(staticDir);
+        Router router = new Router(staticFileHandler);
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("HTTP Server started on port " + port);
 
             while (true) {
-                StaticFileHandler staticFileHandler = new StaticFileHandler(staticDir);
-                Router router = new Router(staticFileHandler);
-
-
                 Socket clientSocket = serverSocket.accept();
                 ClientHandler handler = new ClientHandler(clientSocket, router);
                 System.out.println("Accepted connection from " + clientSocket.getInetAddress());
@@ -39,8 +37,11 @@ public class HttpServer {
 
         } catch (IOException e) {
             System.err.println("Server exception: " + e.getMessage());
-            System.err.println("[" + java.time.LocalDateTime.now() + "] ⚠️ Error: " + e.getMessage());
         }
     }
 }
 
+
+// default page: http://localhost:8080/
+// fetching metadata: http://localhost:8080/api/fetch?url=https://example.com
+// template rendering: http://localhost:8080/api/fetch?url=https://example.com&format=html

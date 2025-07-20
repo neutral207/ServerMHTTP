@@ -1,5 +1,6 @@
 package org.example;
 import java.io.*;
+import java.net.URLConnection;
 import java.nio.file.*;
 
 public class StaticFileHandler {
@@ -7,22 +8,30 @@ public class StaticFileHandler {
 
     public StaticFileHandler(String root) {
         this.staticDir = Paths.get(System.getProperty("user.dir"), root);
+        System.out.println("Static file root: " + staticDir);
     }
     public StaticFileHandler() {
-        this.staticDir = Path.of("src/main/resources");
+        this.staticDir = Paths.get("src", "main", "resources").toAbsolutePath().normalize();
     }
-    public boolean serve(String resource, OutputStream rawOut) {
+    public boolean serve(String resource, OutputStream rawOut) throws IOException {
+        System.out.println("Serving static file: " + resource);
         if(resource.equals("/")){
             resource = "/index.html";
         }
 
-        Path filePath = staticDir.resolve(resource.substring(1)).normalize();
+        String cleanPath = resource.startsWith("/") ? resource.substring(1) : resource;
 
-        try {
-            if (Files.exists(filePath) && !Files.isDirectory(filePath)) {
-                String ext = getFileExtension(filePath.getFileName().toString());
-                String contentType = MimeTypeMap.get(ext);
-                byte[] fileData = Files.readAllBytes(filePath);
+
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream(cleanPath)) {
+            if(input == null){
+                System.out.println("Resource not found: " + resource);
+                return false;
+            }
+
+            byte[] fileData = input.readAllBytes();
+            String contentType = URLConnection.guessContentTypeFromName(cleanPath);
+            if (contentType == null){ contentType = "application/octet-stream";}
+
 
                 PrintWriter out = new PrintWriter(rawOut, true);
                 out.println("HTTP/1.1 200 OK");
@@ -33,17 +42,39 @@ public class StaticFileHandler {
 
                 rawOut.write(fileData);
                 rawOut.flush();
+                System.out.println("File served successfully.");
                 return true;
-            }
+
         }   catch(IOException e){
-            System.err.println("Failed to serve static file: " + e.getMessage());
-            System.err.println("[" + java.time.LocalDateTime.now() + "] ⚠️ Error: " + e.getMessage());
+            System.err.println("Failed to serve: " + cleanPath + " - " + e.getMessage());
             return false;
         }
 
-        return false;
+
     }
 
+
+    private void write404(OutputStream out) throws IOException {
+        String body = "<h1>404 Not Found</h1>";
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+        writer.write("HTTP/1.1 404 Not Found\r\n");
+        writer.write("Content-Type: text/html\r\n");
+        writer.write("Content-Length: " + body.length() + "\r\n");
+        writer.write("\r\n");
+        writer.write(body);
+        writer.flush();
+    }
+
+    private void write500(OutputStream out) throws IOException {
+        String body = "<h1>500 Internal Server Error</h1>";
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+        writer.write("HTTP/1.1 500 Internal Server Error\r\n");
+        writer.write("Content-Type: text/html\r\n");
+        writer.write("Content-Length: " + body.length() + "\r\n");
+        writer.write("\r\n");
+        writer.write(body);
+        writer.flush();
+    }
     private String getFileExtension(String fileName){
         int dotIndex = fileName.lastIndexOf('.');
         return (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1).toLowerCase();
