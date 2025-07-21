@@ -10,6 +10,15 @@ import java.net.Socket;
 public class HttpServer {
 
     public static void main(String[] args) {
+
+        InputStream test = ClassLoader.getSystemClassLoader().getResourceAsStream("form.html");
+        if (test == null) {
+            System.out.println("form.html NOT found in classpath.");
+        } else {
+            System.out.println("form.html FOUND in classpath.");
+        }
+
+
         Properties props = new Properties();
         try(InputStream input = new FileInputStream("C:/Users/jteam/IdeaProjects/ServerMHTTP/out/artifacts/ServerPreviewMHTTP_jar/config.properties")){
             props.load(input);

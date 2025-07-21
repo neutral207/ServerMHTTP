@@ -16,13 +16,15 @@ public class StaticFileHandler {
     public boolean serve(String resource, OutputStream rawOut) throws IOException {
         System.out.println("Serving static file: " + resource);
         if(resource.equals("/")){
-            resource = "/index.html";
+            resource = "/form.html";
         }
 
         String cleanPath = resource.startsWith("/") ? resource.substring(1) : resource;
+        System.out.println("Resolved path: " + cleanPath);
+        System.out.println("Current working directory: " + System.getProperty("user.dir"));
 
 
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream(cleanPath)) {
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("/static/" + cleanPath)) {
             if(input == null){
                 System.out.println("Resource not found: " + resource);
                 return false;

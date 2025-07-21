@@ -57,20 +57,20 @@ public class ClientHandler implements Runnable {
 
         } catch (IOException e) {
             System.err.println("Error Handling client request: " + e.getMessage());
-            System.err.println("[" + java.time.LocalDateTime.now() + "] ⚠️ Error: " + e.getMessage());
+            System.err.println("[" + java.time.LocalDateTime.now() + "] Error: " + e.getMessage());
         } finally {
             try {
                 clientSocket.close();
             } catch (IOException ex) {
                 System.err.println("Error closing client socket: " + ex.getMessage());
-                System.err.println("[" + java.time.LocalDateTime.now() + "] ⚠️ Error: " + ex.getMessage());
+                System.err.println("[" + java.time.LocalDateTime.now() + "] Error: " + ex.getMessage());
             }
         }
     }
 
     private void handleHead(String resource) throws IOException {
         if(resource.equals("/")){
-            resource = "/index.html";
+            resource = "/form.html";
         }
 
         Path filePath = Paths.get(System.getProperty("user.dir"),  "static", resource.substring(1)).normalize();

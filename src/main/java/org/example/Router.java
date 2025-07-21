@@ -20,16 +20,21 @@ public class Router {
             ApiHandler apiHandler = new ApiHandler();
             apiHandler.handle(path, handler);
 
-        }else if (path.equals("/") || path.equals("/index.html")){
+        }else if (path.equals("/") || path.equals("/form.html")){
             System.out.println("Routing to static file handler");
-           boolean served =  staticFileHandler.serve(path, out);
+           boolean served = staticFileHandler.serve(path, out);
             System.out.println("Serve success: " + served);
            if(!served){
                write404(out);
            }
         }else{
-            System.out.println("Unknown route. Sending 404.");
-            write404(out);
+            if (!staticFileHandler.serve(path, handler.getOutputStream())) {
+                // Send 404 only if file wasn't served
+                System.out.println("Static file not found: " + path);
+                System.out.println("Unknown route. Sending 404.");
+                write404(out);
+            }
+
         }
 
 
