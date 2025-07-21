@@ -24,7 +24,7 @@ public class StaticFileHandler {
         System.out.println("Current working directory: " + System.getProperty("user.dir"));
 
 
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("/static/" + cleanPath)) {
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("static/" + cleanPath)) {
             if(input == null){
                 System.out.println("Resource not found: " + resource);
                 return false;

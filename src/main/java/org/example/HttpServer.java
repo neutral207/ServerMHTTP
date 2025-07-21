@@ -51,6 +51,8 @@ public class HttpServer {
 }
 
 
-// default page: http://localhost:8080/
-// fetching metadata: http://localhost:8080/api/fetch?url=https://example.com
+// default homepage page: http://localhost:8080/
+
+// fetching metadata: http://localhost:8080/api/fetch?url=https://example.com or typing a valid URL into the box
+
 // template rendering: http://localhost:8080/api/fetch?url=https://example.com&format=html

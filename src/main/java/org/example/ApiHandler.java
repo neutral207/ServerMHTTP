@@ -95,7 +95,7 @@ public class ApiHandler {
 
     private void sendError(OutputStream out, String message)  {
         PrintWriter pw = new PrintWriter(out, true);
-        pw.println("HTTP1.1 400 Bad Request");
+        pw.println("HTTP/1.1 400 Bad Request");
         pw.println("Content-Type: application/json");
         pw.println();
         pw.println("{");
