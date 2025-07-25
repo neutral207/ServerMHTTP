@@ -16,7 +16,7 @@ public class StaticFileHandler {
     public boolean serve(String resource, OutputStream rawOut) throws IOException {
         System.out.println("Serving static file: " + resource);
         if(resource.equals("/")){
-            resource = "/form.html";
+            resource = "/index.html";
         }
 
         String cleanPath = resource.startsWith("/") ? resource.substring(1) : resource;
@@ -27,7 +27,29 @@ public class StaticFileHandler {
         try (InputStream input = getClass().getClassLoader().getResourceAsStream("static/" + cleanPath)) {
             if(input == null){
                 System.out.println("Resource not found: " + resource);
-                return false;
+                try(InputStream notFoundStream = getClass().getClassLoader().getResourceAsStream("static/404.html")) {
+                    if(notFoundStream != null){
+                        byte[] notFoundData = notFoundStream.readAllBytes();
+                        String contentType = "text/html";
+
+                        PrintWriter out = new PrintWriter(new OutputStreamWriter(rawOut));
+                        out.println("HTTP/1.1 404 Not Found");
+                        out.println("Content-Type: " + contentType);
+                        out.println("Content-Length: " + notFoundData.length);
+                        out.println();
+                        out.flush();
+
+                        rawOut.write(notFoundData);
+                        rawOut.flush();
+                        System.out.println("404 page served");
+                    }else{
+                        write404(rawOut);
+                    }
+                }catch(Exception e){
+                    System.err.println("Error serving 404 page: " + e.getMessage());
+                    write500(rawOut);
+                }
+                return true;
             }
 
             byte[] fileData = input.readAllBytes();

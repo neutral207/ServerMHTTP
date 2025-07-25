@@ -11,6 +11,13 @@ public class HttpServer {
 
     public static void main(String[] args) {
 
+        InputStream pretest = ClassLoader.getSystemClassLoader().getResourceAsStream("index.html");
+        if (pretest == null) {
+            System.out.println("index.html NOT found in classpath.");
+        } else {
+            System.out.println("index.html FOUND in classpath.");
+        }
+
         InputStream test = ClassLoader.getSystemClassLoader().getResourceAsStream("form.html");
         if (test == null) {
             System.out.println("form.html NOT found in classpath.");

@@ -1,0 +1,30 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Interactive Form</title>
+</head>
+<body>
+<h1>Send a Message</h1>
+<form action="/submit" method="post">
+  <label for="name"> Name:</label>
+  <label>
+    <input type="text" name="name" required>
+  </label>
+  <br>
+  <label for="message"> Message:</label>
+  <label>
+    <input type="text" name="message" required>
+  </label>
+  <br>
+  <button type="submit">Send (POST)</button>
+</form>
+<br>
+<form action="/submit" method="get">
+  <input type="hidden" name="name" value="Joel">
+  <input type="hidden" name="message" value="Testing GET">
+  <button type="submit">Send Sample (GET)</button>
+</form>
+</body>
+</html>
