@@ -8,7 +8,6 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
@@ -16,7 +15,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 
-public class ApiHandler {
+public class ApiHandlerV1 {
 
     public void handle(String path, ClientHandler handler) {
 
@@ -29,7 +28,7 @@ public class ApiHandler {
                 return;
             }
 
-            String title = "N/A";
+            String title;
             String desc = "N/A";
 
             try (CloseableHttpClient hClient = HttpClients.createDefault()) {
@@ -89,7 +88,7 @@ public class ApiHandler {
         writer.println("HTTP/1.1 200 OK");
         writer.println("Content-Type: application/json");
         writer.println();
-        writer.println("{\"title\":\"" + escapeJSON(title) + "\",\"description\":\"" + escapeJSON(desc) + "\"}");
+        writer.println(JsonUtil.formatSuccess(Map.of("title", title, "desc", desc)));
         writer.flush();
     }
 
@@ -99,7 +98,7 @@ public class ApiHandler {
         pw.println("Content-Type: application/json");
         pw.println();
         pw.println("{");
-        pw.println("  \"error\": \"" + escapeJSON(message) + "\"");
+        pw.println(JsonUtil.formatFail(Map.of("message", message)));
         pw.println("}");
         pw.flush();
     }
@@ -122,8 +121,6 @@ public class ApiHandler {
             sendError(out, "Template Error: " + e.getMessage());
         }
     }
-    private String escapeJSON(String str){
-        return str.replace("\"", "\\\"");
-    }
 
 }
+

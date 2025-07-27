@@ -85,6 +85,7 @@ public class StaticFileHandler {
             case 405 -> "405 Method Not Allowed";
             case 400 -> "400 Bad Request";
             case 500 -> "500 Internal Server Error";
+            case 204 -> "204 No Content";
             default -> "Error";
         };
 

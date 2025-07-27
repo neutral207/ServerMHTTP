@@ -10,12 +10,12 @@ public class Router {
 
     }
     public void handle(String path, String method, String body,ClientHandler handler) throws IOException {
+        Logger.debug("Received request: " + method + " " + path);
         Logger.info("Received request for path: " + path);
         OutputStream out = handler.getOutputStream();
-        if(path.startsWith("/api/fetch")) {
+        if(path.startsWith("/api/v1/fetch")) {
             Logger.debug("Routing to API handler");
-            ApiHandler apiHandler = new ApiHandler();
-            apiHandler.handle(path, handler);
+            new ApiHandlerV1().handle(path, handler);
 
         }else if (path.equals("/")){
             staticFileHandler.serve("/index.html", out);
@@ -32,7 +32,10 @@ public class Router {
             handlePost(handler, out, body);
          }else if(method.equalsIgnoreCase("GET")){
                 handleGet(handler.toString(), out);
-            }else{
+            }else if (!method.equals("GET") && !method.equals("POST")) {
+               staticFileHandler.writeError(405, "Method Not Allowed", out);
+               return;
+           }else{
                 staticFileHandler.writeError(405, "Requested method is not allowed.", out);
             }
 

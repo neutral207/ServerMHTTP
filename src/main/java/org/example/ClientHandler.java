@@ -21,7 +21,7 @@ public class ClientHandler implements Runnable {
         this.clientSocket = clientSocket;
         this.router = router;
         this.rawOut = clientSocket.getOutputStream();
-        this.staticFileHandler = new StaticFileHandler(clientSocket.getInetAddress().getHostName());
+        this.staticFileHandler = new StaticFileHandler("static");
     }
 
     @Override
