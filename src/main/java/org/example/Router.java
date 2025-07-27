@@ -1,23 +1,45 @@
 package org.example;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class Router {
     private final StaticFileHandler staticFileHandler;
-
     public Router(StaticFileHandler staticFileHandler) {
         this.staticFileHandler = staticFileHandler;
 
     }
     public void handle(String path, String method, String body,ClientHandler handler) throws IOException {
+        HttpServer.incrementRequestCount();
         Logger.debug("Received request: " + method + " " + path);
         Logger.info("Received request for path: " + path);
+        String newPath = path.split("\\?")[0];
+        Map<String, String> queryParams = new HashMap<>();
+        if(path.contains("?")) {
+            String query = path.substring(path.indexOf("?")+1);
+                for(String param : query.split("&")) {
+                    String[] pair = param.split("=", 2);
+                    if(pair.length == 2) {
+                        queryParams.put(
+                                java.net.URLDecoder.decode(pair[0], StandardCharsets.UTF_8),
+                                java.net.URLDecoder.decode(pair[1], StandardCharsets.UTF_8)
+                        );
+                    }
+                }
+        }
         OutputStream out = handler.getOutputStream();
-        if(path.startsWith("/api/v1/fetch")) {
+        if(path.startsWith("/api/v1/fetch") || path.startsWith("/api/v1/metadata")) {
             Logger.debug("Routing to API handler");
             new ApiHandlerV1().handle(path, handler);
 
-        }else if (path.equals("/")){
+        }else if (path.equals("/api/v1/status")) {
+            Logger.debug("Routing to API status endpoint");
+            new ApiHandlerV1().handleStatus(handler.getOutputStream());
+        }
+        else if (path.equals("/")){
             staticFileHandler.serve("/index.html", out);
         }
         else if (path.equals("/form.html")){
@@ -31,10 +53,9 @@ public class Router {
            if(method.equalsIgnoreCase("POST")){
             handlePost(handler, out, body);
          }else if(method.equalsIgnoreCase("GET")){
-                handleGet(handler.toString(), out);
+                handleGet(queryParams, out);
             }else if (!method.equals("GET") && !method.equals("POST")) {
                staticFileHandler.writeError(405, "Method Not Allowed", out);
-               return;
            }else{
                 staticFileHandler.writeError(405, "Requested method is not allowed.", out);
             }
@@ -48,8 +69,6 @@ public class Router {
             }
 
         }
-
-
     }
 
     private void handlePost(ClientHandler request, OutputStream out, String body) {
@@ -60,11 +79,10 @@ public class Router {
         sendHtmlResponse(out, body);
     }
 
-    private void handleGet(String requestPath, OutputStream out) {
-        String[] parts = requestPath.split("\\?", 2);
-        String query = parts.length > 1 ? parts[1] : "";
-        String name = getQueryParam(query, "name");
-        String message = getQueryParam(query, "message");
+    private void handleGet(Map<String,String> requestPath, OutputStream out) {
+
+        String name = requestPath.getOrDefault("name", "Guest");
+        String message = getQueryParam("message", "No message provided");
 
         String body = "<h1>Hello " + escapeHtml(name) + "!</h1><p>You said: '" + escapeHtml(message) + "'</p>";
         sendHtmlResponse(out, body);

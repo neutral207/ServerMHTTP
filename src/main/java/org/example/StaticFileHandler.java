@@ -55,7 +55,10 @@ public class StaticFileHandler {
 
             byte[] fileData = input.readAllBytes();
             String contentType = URLConnection.guessContentTypeFromName(cleanPath);
-            if (contentType == null){ contentType = "application/octet-stream";}
+            if (contentType == null){
+                String ext = getFileExtension(cleanPath);
+                contentType = MimeTypeMap.mimeTypes.getOrDefault(ext, "application/octet-stream");
+            }
 
 
                 PrintWriter out = new PrintWriter(rawOut, true);
@@ -84,13 +87,11 @@ public class StaticFileHandler {
             case 404 -> "404 Not Found";
             case 405 -> "405 Method Not Allowed";
             case 400 -> "400 Bad Request";
-            case 500 -> "500 Internal Server Error";
             case 204 -> "204 No Content";
-            default -> "Error";
+            default -> "Internal Server Error";
         };
 
-        String body = "<html><head><title>" + status + " " + statusText + "</title></head>" + "<body><h1>" +
-                status + " " + statusText + "</h1><p>" + message + "<p></body></html>";
+        String body = "<html><body><h1>Error " + status + "</h1><p> " + statusText + "</p></body></html>";
 
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
         writer.write("HTTP/1.1 " +  status + " " + statusText + "\r\n");

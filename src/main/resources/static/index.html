@@ -2,28 +2,112 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Welcome to My HTTP Server</title>
+    <title>Metadata Fetcher</title>
     <style>
-        body {font-family: sans-serif; padding: 2em; background: #f5f5f5;}
-        h1{ color: #333}
-        code { background: #eee; padding: 2px 4px; border-radius: 4px;}
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2em;
+            background-color: #f9f9f9;
+        }
+        form {
+            background: white;
+            padding: 2em;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: auto;
+        }
+        label, input, button {
+            display: block;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+        input, button {
+            padding: 0.6em;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        #result {
+            margin-top: 2em;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 1em;
+            background: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            display: none;
+        }
+        #result.error{
+            background: #ffe6e6;
+            border-left: 4px solid red;
+        }
+        input:invalid{
+            border-color: red;
+        }
     </style>
 </head>
 <body>
-    <h1>Welcome to the HTTP server!</h1>
-    <p>This server is up, running, and ready to accept requests.</p>
 
-    <h2>Available Routes</h2>
-    <ul>
-        <li><strong>GET /api/fetch?url=https:example.com</strong><br/>
-            Fetches and displays content (JSON, HTML) from the given URL.
-        </li>
-        <li><strong>GET /form.html</strong><br/>
-            Opens a basic form to submit a URL for fetching data
-        </li>
-    </ul>
+<form id="metadataForm">
+    <h2>Fetch Website Metadata</h2>
+    <label for="url">Enter a URL:</label>
+    <input type="url" id="url" name="url" placeholder="https://example.com" required>
+    <button type="submit">Fetch Metadata</button>
+</form>
 
-    <p>Server Version: 1.0<br/>
-        BUILT IN JAVA</p>
+<div id="result">
+    <h3>Result</h3>
+    <p><strong>Title:</strong> <span id="title"></span></p>
+    <p><strong>Description:</strong> <span id="desc"></span></p>
+</div>
+
+<script>
+    const form = document.getElementById('metadataForm');
+    const resultBox = document.getElementById('result');
+    const titleEl = document.getElementById('title');
+    const descEl = document.getElementById('desc');
+
+    const showError = (message) => {
+        titleEl.textContent = 'Error';
+        descEl.textContent = message;
+        resultBox.style.display = 'block';
+        resultBox.style.borderLeft = '4px solid red';
+        resultBox.style.background = '#ffe6e6';
+    };
+
+    form.addEventListener('submit', async function (e){
+        e.preventDefault();
+        const urlInput = document.getElementById('url');
+        const url = urlInput.value.trim();
+
+        if(!url){
+            showError("Please Enter a URL.");
+        }
+
+        try{
+            const response  =  await fetch(`/api/v1/fetch?url=${encodeURIComponent(url)}`);
+            if(!response.ok){
+                showError(`Server returned ${response.status} ${response.statusText}`);
+            }
+
+            const json =  await response.json();
+            if(json && json.status === 'success'){
+                titleEl.textContent = json.data.title || 'N/A';
+                descEl.textContent = json.data.description || 'N/A';
+                resultBox.style.display = 'block';
+                resultBox.style.borderLeft = '4px solid #1890ff';
+                resultBox.style.background = '#e6f7ff';
+            }else{
+                showError("MetaData could not be retrieved.");
+            }
+
+        }catch(err){
+            showError("Network or server error occurred.");
+        }
+
+    });
+
+</script>
+
 </body>
 </html>

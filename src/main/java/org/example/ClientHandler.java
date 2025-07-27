@@ -53,14 +53,17 @@ public class ClientHandler implements Runnable {
 
             String requestBody = bodyBUILDER.toString();
             Logger.info("Client Request: " + requests);
-            router.handle(path, method, requestBody, this);
 
-            switch (method) {
-                case "HEAD" -> handleHead(path);
-                case "OPTIONS" -> sendOptionsResponse();
-                default -> staticFileHandler.writeError(405, "Requested Method is not allowed", rawOut);
+
+            if (method.equals("GET") || method.equals("POST")) {
+                router.handle(path, method, requestBody, this);
+            } else if (method.equals("HEAD")) {
+                handleHead(path);
+            } else if (method.equals("OPTIONS")) {
+                sendOptionsResponse();
+            } else {
+                staticFileHandler.writeError(405, "Requested Method is not allowed", rawOut);
             }
-
 
         } catch (IOException e) {
             Logger.error("Error Handling client request: " + e.getMessage());

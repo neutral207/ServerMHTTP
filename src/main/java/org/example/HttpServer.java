@@ -6,8 +6,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class HttpServer {
+    public static final long START_TIME = System.currentTimeMillis();
+    public static final AtomicLong requestCount = new AtomicLong(0);
 
     public static void main(String[] args) {
 
@@ -55,11 +58,18 @@ public class HttpServer {
             Logger.error("Server exception: " + e.getMessage());
         }
     }
+
+    public static void  incrementRequestCount(){
+        requestCount.incrementAndGet();
+    }
+    public static long getRequestCount(){
+        return requestCount.get();
+    }
 }
 
 
 // default homepage page: http://localhost:8080/
 
-// fetching metadata: http://localhost:8080/api/fetch?url=https://example.com or typing a valid URL into the box
+// fetching metadata: http://localhost:8080/api/v1/fetch?url=https://example.com or typing a valid URL into the box
 
-// template rendering: http://localhost:8080/api/fetch?url=https://example.com&format=html
+// template rendering: http://localhost:8080/api/v1/fetch?url=https://example.com&format=html

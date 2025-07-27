@@ -20,6 +20,11 @@ public class MimeTypeMap {
             mimeTypes.put("gif", "image/gif");
             mimeTypes.put("svg", "image/svg+xml");
             mimeTypes.put("ico", "image/x-icon");
+            mimeTypes.put("webm", "video/webm");
+            mimeTypes.put("woff", "font/woff");
+            mimeTypes.put("woff2", "font/woff2");
+            mimeTypes.put("ttf", "font/ttf");
+            mimeTypes.put("mp4", "video/mp4");
         }
 
 

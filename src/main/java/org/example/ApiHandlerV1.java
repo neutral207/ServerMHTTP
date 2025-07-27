@@ -8,6 +8,7 @@ import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URLDecoder;
@@ -18,13 +19,16 @@ import java.util.Map;
 public class ApiHandlerV1 {
 
     public void handle(String path, ClientHandler handler) {
-
+        HttpServer.incrementRequestCount();
+        if (path.equals("/api/v1/status")) {
+            handleStatus(handler.getOutputStream());
+        }
         try {
             String urlP = extractQueryParam(path, "url");
             String formatP = extractQueryParam(path, "format");
 
             if (urlP == null || urlP.isEmpty()) {
-                sendError(handler.getOutputStream(), "Missing 'url' query parameter");
+                sendJSONError(handler.getOutputStream(), 400,"Missing 'url' query parameter");
                 return;
             }
 
@@ -48,22 +52,46 @@ public class ApiHandlerV1 {
                     sendJSON(handler.getOutputStream(), title, desc);
                 }
             }catch (Exception e) {
-                sendError(handler.getOutputStream(), "Failed to fetch or parse: " + e.getMessage());
+                sendJSONError(handler.getOutputStream(), 500,"Failed to fetch or parse: " + e.getMessage());
                 return;
             }
 
             if("html".equals(formatP)){
                 renderHtmlResponse(handler.getOutputStream(), title, desc);
-            }else{
-                sendJSON(handler.getOutputStream(), title, desc);
             }
         } catch (Exception e) {
-            sendError(handler.getOutputStream(), "Server Error: " + e.getMessage());
+            sendJSONError(handler.getOutputStream(),500, "Server Error: " + e.getMessage());
         }
     }
 
 
+    public void handleStatus(OutputStream out) {
+        long uptimeMillis = System.currentTimeMillis() - HttpServer.START_TIME;
+        long requestCount = HttpServer.getRequestCount();
 
+        Runtime runtime = Runtime.getRuntime();
+        long memoryUsed =  runtime.totalMemory() - runtime.freeMemory();
+        long memoryTotal =  runtime.totalMemory();
+
+        String json = String.format("""
+                {
+                "uptimeMillis": %d,
+                "uptimeSeconds": %.2f,
+                "totalRequests": %d,
+                "memoryUsedBytes": %d,
+                "memoryTotalBytes": %d,
+                }
+                """, uptimeMillis, uptimeMillis / 1000.0,  requestCount, memoryUsed, memoryTotal);
+
+        PrintWriter writer = new PrintWriter(out);
+        writer.println("HTTP/1.1 200 OK");
+        writer.println("Content-Type: application/json; charset=utf-8");
+        writer.println("Content-Length: " + json.getBytes().length);
+        writer.println();
+        writer.println(json);
+        writer.flush();
+
+    }
 
     private String extractQueryParam(String path, String key){
         try{
@@ -92,35 +120,42 @@ public class ApiHandlerV1 {
         writer.flush();
     }
 
-    private void sendError(OutputStream out, String message)  {
-        PrintWriter pw = new PrintWriter(out, true);
-        pw.println("HTTP/1.1 400 Bad Request");
-        pw.println("Content-Type: application/json");
-        pw.println();
-        pw.println("{");
-        pw.println(JsonUtil.formatFail(Map.of("message", message)));
-        pw.println("}");
-        pw.flush();
+    private void sendJSONError(OutputStream out, int code, String message)  {
+        String json = String.format("{\"error\": \"%s\", \"code\": %d}", message, code);
+        PrintWriter writer = new PrintWriter(out, true);
+        writer.println("HTTP/1.1 " + code + " " + getStatusText(code));
+        writer.println("Content-Type: application/json; charset=UTF-8");
+        writer.println("Content-Length: " + json.getBytes().length);
+        writer.println();
+        writer.print(json);
+        writer.flush();
     }
     private void renderHtmlResponse(OutputStream out, String title, String desc){
         try{
-            TemplatingEngine engine = new TemplatingEngine();
             Map<String, String> data = Map.of(
                     "title", title,
                     "description", desc
             );
-            String rendered = engine.renderTemplate(data);
+           // String rendered = TemplatingEngine.renderTemplate("template.html", data);
 
             PrintWriter writer = new PrintWriter(out, true);
             writer.println("HTTP/1.1 200 OK");
             writer.println("Content-Type: text/html");
             writer.println();
-            writer.println(rendered);
+         //   writer.println(rendered);
             writer.flush();
         } catch (Exception e){
-            sendError(out, "Template Error: " + e.getMessage());
+            sendJSONError(out,400, "Template Error: " + e.getMessage());
         }
     }
-
+    private static String getStatusText(int code) {
+        return switch (code) {
+            case 400 -> "Bad Request";
+            case 404 -> "Not Found";
+            case 405 -> "Method Not Allowed";
+            case 204 -> "No Content";
+            default -> "Internal Server Error";
+        };
+    }
 }
 
