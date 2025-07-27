@@ -9,39 +9,39 @@ public class Router {
         this.staticFileHandler = staticFileHandler;
 
     }
-    public void handle(String path, ClientHandler handler) throws IOException {
-        System.out.println("Received request for path: " + path);
+    public void handle(String path, String method, String body,ClientHandler handler) throws IOException {
+        Logger.info("Received request for path: " + path);
         OutputStream out = handler.getOutputStream();
         if(path.startsWith("/api/fetch")) {
-            System.out.println("Routing to API handler");
+            Logger.debug("Routing to API handler");
             ApiHandler apiHandler = new ApiHandler();
             apiHandler.handle(path, handler);
 
         }else if (path.equals("/")){
-            staticFileHandler.serve("/index.html", handler.getOutputStream());
+            staticFileHandler.serve("/index.html", out);
         }
         else if (path.equals("/form.html")){
-            System.out.println("Routing to static file handler");
+            Logger.debug("Routing to static file handler");
            boolean served = staticFileHandler.serve(path, out);
-            System.out.println("Serve success: " + served);
+            Logger.debug("Serve success: " + served);
            if(!served){
-               write404(out);
+               staticFileHandler.writeError(404, "Error serving static File: " + path, out);
            }
         }else if(path.equals("/submit")) {
            if(method.equalsIgnoreCase("POST")){
-            handlePost(request, out);
+            handlePost(handler, out, body);
          }else if(method.equalsIgnoreCase("GET")){
-                handleGet(request, out);
+                handleGet(handler.toString(), out);
             }else{
-                write405(out);
+                staticFileHandler.writeError(405, "Requested method is not allowed.", out);
             }
 
         }else{
             if (!staticFileHandler.serve(path, handler.getOutputStream())) {
               //   Send 404 only if file wasn't served
-                System.out.println("Static file not found: " + path);
-                System.out.println("Unknown route. Sending 404.");
-                write404(out);
+                Logger.error("Static file not found: " + path);
+                Logger.error("Unknown route. Sending 404.");
+                staticFileHandler.writeError(404, "Error: Unknown Route: " + path, out);
             }
 
         }
@@ -49,36 +49,27 @@ public class Router {
 
     }
 
-    private void write404(OutputStream out) throws IOException {
-        String body = "<h1>404 Not Found</h1>";
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
-        writer.write("HTTP/1.1 404 Not Found\r\n");
-        writer.write("Content-Type: text/html\r\n");
-        writer.write("Content-Length: " + body.length() + "\r\n");
-        writer.write("\r\n");
-        writer.write(body);
-        writer.flush();
+    private void handlePost(ClientHandler request, OutputStream out, String body) {
+        String name = request.getPostParam(body,"name");
+        String message = request.getPostParam(body,"message");
+
+        String responseBody = "<h1>Hello " + escapeHtml(name) + "!</h1><p>You said: '" + escapeHtml(message) + "'</p>";
+        sendHtmlResponse(out, body);
     }
 
-    private void handlePost(ClientHandler request, OutputStream out) throws IOException {
-        String name = request.getParameter("name");
-        String message = request.getParameter("message");
+    private void handleGet(String requestPath, OutputStream out) {
+        String[] parts = requestPath.split("\\?", 2);
+        String query = parts.length > 1 ? parts[1] : "";
+        String name = getQueryParam(query, "name");
+        String message = getQueryParam(query, "message");
 
         String body = "<h1>Hello " + escapeHtml(name) + "!</h1><p>You said: '" + escapeHtml(message) + "'</p>";
-        sendHtmlResponse(out, "200 OK", body);
+        sendHtmlResponse(out, body);
     }
 
-    private void handleGet(ClientHandler request, OutputStream out) throws IOException {
-        String name = request.getQueryParam("name");
-        String message = request.getQueryParam("message");
-
-        String body = "<h1>Hello " + escapeHtml(name) + "!</h1><p>You said: '" + escapeHtml(message) + "'</p>";
-        sendHtmlResponse(out, "200 OK", body);
-    }
-
-    private void sendHtmlResponse(OutputStream out, String status, String body) throws IOException {
+    private void sendHtmlResponse(OutputStream out, String body) {
         PrintWriter writer = new PrintWriter(out, true);
-        writer.println("HTTP/1.1 " + status);
+        writer.println("HTTP/1.1 " + "200 OK");
         writer.println("Content-Type: text/html; charset=UTF-8");
         writer.println("Content-Length: " + body.getBytes().length);
         writer.println();
@@ -86,6 +77,15 @@ public class Router {
         writer.flush();
     }
 
+    private String getQueryParam(String query, String name) {
+        for (String param : query.split("&")) {
+            String[] parts = param.split("=");
+            if(parts.length == 2 && parts[0].equals(name)) {
+                return java.net.URLDecoder.decode(parts[1], java.nio.charset.StandardCharsets.UTF_8);
+            }
+        }
+        return null;
+    }
     private String escapeHtml(String input) {
         return input == null ? "" : input.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }

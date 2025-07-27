@@ -13,26 +13,26 @@ public class HttpServer {
 
         InputStream pretest = ClassLoader.getSystemClassLoader().getResourceAsStream("index.html");
         if (pretest == null) {
-            System.out.println("index.html NOT found in classpath.");
+            Logger.debug("index.html NOT found in classpath.");
         } else {
-            System.out.println("index.html FOUND in classpath.");
+            Logger.info("index.html FOUND in classpath.");
         }
 
         InputStream test = ClassLoader.getSystemClassLoader().getResourceAsStream("form.html");
         if (test == null) {
-            System.out.println("form.html NOT found in classpath.");
+            Logger.debug("form.html NOT found in classpath.");
         } else {
-            System.out.println("form.html FOUND in classpath.");
+            Logger.info("form.html FOUND in classpath.");
         }
 
 
         Properties props = new Properties();
         try(InputStream input = new FileInputStream("C:/Users/jteam/IdeaProjects/ServerMHTTP/out/artifacts/ServerPreviewMHTTP_jar/config.properties")){
             props.load(input);
-            System.out.println("Configuration file loaded.");
+            Logger.info("Configuration file loaded.");
         }
         catch(IOException ex){
-            System.err.println("Error loading configuration file.");
+            Logger.error("Error loading configuration file.");
         }
 
         int port = Integer.parseInt(props.getProperty("port", "8080"));
@@ -42,17 +42,17 @@ public class HttpServer {
         Router router = new Router(staticFileHandler);
 
         try (ServerSocket serverSocket = new ServerSocket(port)) {
-            System.out.println("HTTP Server started on port " + port);
+            Logger.debug("HTTP Server started on port " + port);
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
                 ClientHandler handler = new ClientHandler(clientSocket, router);
-                System.out.println("Accepted connection from " + clientSocket.getInetAddress());
+                Logger.info("Accepted connection from " + clientSocket.getInetAddress());
                 new Thread(handler).start();
             }
 
         } catch (IOException e) {
-            System.err.println("Server exception: " + e.getMessage());
+            Logger.error("Server exception: " + e.getMessage());
         }
     }
 }

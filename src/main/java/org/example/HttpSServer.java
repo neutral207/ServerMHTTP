@@ -14,9 +14,9 @@ public class HttpSServer {
         Properties prop = new Properties();
         try (InputStream input = new FileInputStream("C:/Users/jteam/IdeaProjects/ServerMHTTP/out/artifacts/ServerPreviewMHTTP_jar/config.properties")) {
             prop.load(input);
-            System.out.println("Config properties loaded");
+            Logger.info("Config properties loaded");
         }catch (Exception e){
-            System.err.println("Error loading config properties");
+            Logger.error("Error loading config properties");
         }
 
         int port = Integer.parseInt(prop.getProperty("HttpsPort", "8443"));
@@ -40,16 +40,16 @@ public class HttpSServer {
             SSLServerSocketFactory sslsf = ssl.getServerSocketFactory();
             SSLServerSocket serverSocket = (SSLServerSocket) sslsf.createServerSocket(port);
 
-            System.out.println("Server listening on port " + port);
+           Logger.debug("Server listening on port " + port);
 
                 while(true){
                     SSLSocket client = (SSLSocket) serverSocket.accept();
-                    System.out.println("Accepted HTTPS connection from " + client.getInetAddress());
+                    Logger.info("Accepted HTTPS connection from " + client.getInetAddress());
                     new Thread(new ClientHandler(client, router)).start();
                 }
 
     }catch (Exception e){
-        System.err.println("HTTPS Server Error: " + e.getMessage());
+        Logger.error("HTTPS Server Error: " + e.getMessage());
         e.printStackTrace();
         }
     }

@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class ApiHandler {
 
-    public void handle(String path, ClientHandler handler) throws IOException {
+    public void handle(String path, ClientHandler handler) {
 
         try {
             String urlP = extractQueryParam(path, "url");
